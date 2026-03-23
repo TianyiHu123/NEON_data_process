@@ -1,0 +1,16 @@
+# conda env for NEON PyMC pipeline (conda-forge recommended).
+#   conda env create -f environment.yml
+#   conda activate neon-pymc
+#
+# Thread caps for multi-chain sampling (see scripts/submit_array.slurm):
+#   export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+
+name: neon-pymc
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pymc>=5.10,<6
+  - arviz>=0.17
+  - pandas>=2.0
+  - numpy>=1.24
