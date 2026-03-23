@@ -1,9 +1,16 @@
+import os
+
+# With multiple MCMC chains (cores > 1), cap BLAS threads in the environment so
+# workers do not oversubscribe the node, e.g. OMP_NUM_THREADS=1, MKL_NUM_THREADS=1,
+# OPENBLAS_NUM_THREADS=1, NUMEXPR_NUM_THREADS=1 (see scripts/submit_array.slurm).
+
 import numpy as np
 import pandas as pd
 import pymc as pm
 import arviz as az
 
-def State_space_model(data_all, data_filtered, RANDOM_SEED):
+
+def State_space_model(data_all, data_filtered, RANDOM_SEED, cores=None):
     
     timearray = np.unique(data_all[['time_idx']].values)
     coords = {
@@ -77,13 +84,17 @@ def State_space_model(data_all, data_filtered, RANDOM_SEED):
                            observed=y_obs_lnflux,
                            dims="obs",)
 
-        idata = pm.sample(draws=1000,
-                         tune=2000,
-                         chains=4,
-                         target_accept=0.95,
-                         max_treedepth=15,
-                         random_seed=RANDOM_SEED,
-                         return_inferencedata=True,)
-
+        if cores is None:
+            cores = min(4, os.cpu_count() or 1)
+        idata = pm.sample(
+            draws=1000,
+            tune=2000,
+            chains=4,
+            cores=cores,
+            target_accept=0.95,
+            max_treedepth=15,
+            random_seed=RANDOM_SEED,
+            return_inferencedata=True,
+        )
 
     return idata
