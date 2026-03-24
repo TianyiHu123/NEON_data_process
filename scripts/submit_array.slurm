@@ -11,10 +11,12 @@
 #   sbatch scripts/submit_array.slurm
 
 #SBATCH --job-name=neon_sr
+#SBATCH --account=chopinsong 
+#SBATCH --partition=standard
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
-#SBATCH --time=24:00:00
+#SBATCH --time=10:00:00
 #SBATCH --output=logs/neon_%A_%a.out
 #SBATCH --error=logs/neon_%A_%a.err
 ## Match line count in task_list.txt (inclusive range, one line per task):
@@ -24,6 +26,8 @@ set -euo pipefail
 
 export DATA_DIR="${SLURM_SUBMIT_DIR}/data"
 export OUTPUT_DIR="${SLURM_SUBMIT_DIR}/results"
+export TASK_FILE="${DATA_DIR}/JERC_list.txt"
+export REPO_ROOT="${SLURM_SUBMIT_DIR:-$(pwd)}"
 
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
@@ -31,12 +35,10 @@ export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
 SEED="${SEED:-$((42 + SLURM_ARRAY_TASK_ID))}"
-REPO_ROOT="${SLURM_SUBMIT_DIR:-$(pwd)}"
 
 cd "$REPO_ROOT"
 mkdir -p logs
 
-TASKS_FILE="${TASKS_FILE:-${REPO_ROOT}/task_list.txt}"
 if [[ ! -f "$TASKS_FILE" ]]; then
   echo "Missing task file: $TASKS_FILE (copy from task_list.example.txt)" >&2
   exit 1
