@@ -33,6 +33,10 @@ Each CSV should contain at least:
   - Conda environment for reproducible setup.
 - `example_code/`
   - Reference notebook/script used during model development.
+- `main/posterior_flux.py`
+  - Helpers to align model time with NEON timestamps and to **stream** accumulate per-chain posterior means of flux: for each draw, sum `mu_t`, `plot_offset`, and `hour_effect` on the **log-flux** scale, then `exp`, then average over draws within each chain (memory-efficient; no full `(chain, draw, time, plot)` tensor).
+- `plot_posterior_nc.py`
+  - Reads `${site}_${year}_posterior.nc` and site data; writes diagnostic figures (see [Posterior visualization](#posterior-visualization)).
 
 ## Model + Missing Data Strategy
 
@@ -110,6 +114,33 @@ Main output files:
 - `${site}_${year}_bayesian_hour_effects_AR1.csv`
 - `${site}_${year}_bayesian_scalar_parameters_AR1.csv`
 - `${site}_${year}_arviz_summary.csv`
+
+Optional (after running `plot_posterior_nc.py`):
+
+- `SR_flux_posterior.png`
+- `SR_flux_posterior_sigma_obs.png`
+
+## Posterior visualization
+
+After a fit exists under `results/${site}/${year}/`, you can build flux-scale diagnostic plots (not part of the SLURM fit job by default):
+
+```bash
+python plot_posterior_nc.py --site JERC --year 2020
+```
+
+This script:
+
+- Aligns the time axis and hour-of-day index to the **actual** hourly grid in the CSV (via `data_io`), not an assumed Jan-1 calendar.
+- Computes **per-chain** posterior means of `exp(·)` on the flux scale for:
+  - `E[exp(mu_t)]` (latent site level),
+  - `E[exp(mu_t + plot + hour)]` per plot,
+  - `E[exp(mu_t + plot)]` per plot,
+  - `E[exp(mu_t + hour)]` (site-level, no plot offset).
+- Writes:
+  - `results/${site}/${year}/SR_flux_posterior.png` — four-panel comparison with observations.
+  - `results/${site}/${year}/SR_flux_posterior_sigma_obs.png` — per plot, pooled mean flux with an approximate band using posterior mean `sigma_obs` on the **log-flux** scale: `exp(mean_eta ± mean_sigma_obs)` (see figure title; not a full posterior predictive interval).
+
+`plot_offset` and `hour_effect` in the model are **additive on the log scale**; they are not comparable to `exp(mu_t)` unless combined before exponentiating—this plotting pipeline does that combination per posterior draw.
 
 ## Environment Setup
 
