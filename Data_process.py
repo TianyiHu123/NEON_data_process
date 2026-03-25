@@ -36,70 +36,70 @@ def save_outputs(
     idata.to_netcdf(str(nc_path))
     print(f"Wrote {nc_path}")
 
-    datetime_hour = _datetime_series_aligned_to_mu(data_all).values
+    # datetime_hour = _datetime_series_aligned_to_mu(data_all).values
 
-    mu_post = idata.posterior["mu_t"].mean(dim=("chain", "draw")).values
-    hdi_mu = az.hdi(idata.posterior["mu_t"], hdi_prob=0.95)
-    hdi_arr = np.asarray(hdi_mu)
-    if hdi_arr.ndim == 2 and hdi_arr.shape[-1] == 2:
-        mu_low, mu_high = hdi_arr[:, 0], hdi_arr[:, 1]
-    elif hdi_arr.ndim == 2 and hdi_arr.shape[0] == 2:
-        mu_low, mu_high = hdi_arr[0], hdi_arr[1]
-    else:
-        stacked = np.asarray(hdi_mu).reshape(-1, 2)
-        mu_low, mu_high = stacked[:, 0], stacked[:, 1]
+    # mu_post = idata.posterior["mu_t"].mean(dim=("chain", "draw")).values
+    # hdi_mu = az.hdi(idata.posterior["mu_t"], hdi_prob=0.95)
+    # hdi_arr = np.asarray(hdi_mu)
+    # if hdi_arr.ndim == 2 and hdi_arr.shape[-1] == 2:
+    #     mu_low, mu_high = hdi_arr[:, 0], hdi_arr[:, 1]
+    # elif hdi_arr.ndim == 2 and hdi_arr.shape[0] == 2:
+    #     mu_low, mu_high = hdi_arr[0], hdi_arr[1]
+    # else:
+    #     stacked = np.asarray(hdi_mu).reshape(-1, 2)
+    #     mu_low, mu_high = stacked[:, 0], stacked[:, 1]
 
-    if len(datetime_hour) != len(mu_post):
-        raise ValueError(
-            f"Time axis mismatch: datetime_hour {len(datetime_hour)} vs mu_t {len(mu_post)}"
-        )
+    # if len(datetime_hour) != len(mu_post):
+    #     raise ValueError(
+    #         f"Time axis mismatch: datetime_hour {len(datetime_hour)} vs mu_t {len(mu_post)}"
+    #     )
 
-    site_result = pd.DataFrame(
-        {
-            "datetime_hour": datetime_hour,
-            "mu_post": mu_post,
-            "mu_low": mu_low,
-            "mu_high": mu_high,
-        }
-    )
-    site_result["site_flux_est"] = np.exp(site_result["mu_post"])
-    site_result["site_flux_low"] = np.exp(site_result["mu_low"])
-    site_result["site_flux_high"] = np.exp(site_result["mu_high"])
+    # site_result = pd.DataFrame(
+    #     {
+    #         "datetime_hour": datetime_hour,
+    #         "mu_post": mu_post,
+    #         "mu_low": mu_low,
+    #         "mu_high": mu_high,
+    #     }
+    # )
+    # site_result["site_flux_est"] = np.exp(site_result["mu_post"])
+    # site_result["site_flux_low"] = np.exp(site_result["mu_low"])
+    # site_result["site_flux_high"] = np.exp(site_result["mu_high"])
 
-    hourly_path = out_dir / f"{site}_{year}_bayesian_site_hourly_soil_co2_estimate_AR1.csv"
-    site_result.to_csv(hourly_path, index=False)
-    print(f"Wrote {hourly_path}")
+    # hourly_path = out_dir / f"{site}_{year}_bayesian_site_hourly_soil_co2_estimate_AR1.csv"
+    # site_result.to_csv(hourly_path, index=False)
+    # print(f"Wrote {hourly_path}")
 
-    plot_offset_post = idata.posterior["plot_offset"].mean(dim=("chain", "draw")).values
-    plot_offset_table = pd.DataFrame(
-        {"plotID": all_plots, "posterior_plot_offset": plot_offset_post}
-    )
-    plot_path = out_dir / f"{site}_{year}_bayesian_plot_offsets_AR1.csv"
-    plot_offset_table.to_csv(plot_path, index=False)
-    print(f"Wrote {plot_path}")
+    # plot_offset_post = idata.posterior["plot_offset"].mean(dim=("chain", "draw")).values
+    # plot_offset_table = pd.DataFrame(
+    #     {"plotID": all_plots, "posterior_plot_offset": plot_offset_post}
+    # )
+    # plot_path = out_dir / f"{site}_{year}_bayesian_plot_offsets_AR1.csv"
+    # plot_offset_table.to_csv(plot_path, index=False)
+    # print(f"Wrote {plot_path}")
 
-    hour_effect_post = idata.posterior["hour_effect"].mean(dim=("chain", "draw")).values
-    hour_effect_table = pd.DataFrame(
-        {"hour_of_day": np.arange(24), "posterior_hour_effect": hour_effect_post}
-    )
-    hour_path = out_dir / f"{site}_{year}_bayesian_hour_effects_AR1.csv"
-    hour_effect_table.to_csv(hour_path, index=False)
-    print(f"Wrote {hour_path}")
+    # hour_effect_post = idata.posterior["hour_effect"].mean(dim=("chain", "draw")).values
+    # hour_effect_table = pd.DataFrame(
+    #     {"hour_of_day": np.arange(24), "posterior_hour_effect": hour_effect_post}
+    # )
+    # hour_path = out_dir / f"{site}_{year}_bayesian_hour_effects_AR1.csv"
+    # hour_effect_table.to_csv(hour_path, index=False)
+    # print(f"Wrote {hour_path}")
 
-    rho_post = idata.posterior["rho"].mean(dim=("chain", "draw")).values.item()
-    sigma_proc_post = idata.posterior["sigma_proc"].mean(dim=("chain", "draw")).values.item()
-    sigma_plot_post = idata.posterior["sigma_plot"].mean(dim=("chain", "draw")).values.item()
-    sigma_hour_post = idata.posterior["sigma_hour"].mean(dim=("chain", "draw")).values.item()
+    # rho_post = idata.posterior["rho"].mean(dim=("chain", "draw")).values.item()
+    # sigma_proc_post = idata.posterior["sigma_proc"].mean(dim=("chain", "draw")).values.item()
+    # sigma_plot_post = idata.posterior["sigma_plot"].mean(dim=("chain", "draw")).values.item()
+    # sigma_hour_post = idata.posterior["sigma_hour"].mean(dim=("chain", "draw")).values.item()
 
-    scalar_summary = pd.DataFrame(
-        {
-            "parameter": ["rho", "sigma_proc", "sigma_plot", "sigma_hour"],
-            "posterior_mean": [rho_post, sigma_proc_post, sigma_plot_post, sigma_hour_post],
-        }
-    )
-    scalar_path = out_dir / f"{site}_{year}_bayesian_scalar_parameters_AR1.csv"
-    scalar_summary.to_csv(scalar_path, index=False)
-    print(f"Wrote {scalar_path}")
+    # scalar_summary = pd.DataFrame(
+    #     {
+    #         "parameter": ["rho", "sigma_proc", "sigma_plot", "sigma_hour"],
+    #         "posterior_mean": [rho_post, sigma_proc_post, sigma_plot_post, sigma_hour_post],
+    #     }
+    # )
+    # scalar_path = out_dir / f"{site}_{year}_bayesian_scalar_parameters_AR1.csv"
+    # scalar_summary.to_csv(scalar_path, index=False)
+    # print(f"Wrote {scalar_path}")
 
     summary = az.summary(
         idata,
