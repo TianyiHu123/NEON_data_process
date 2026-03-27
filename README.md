@@ -119,6 +119,10 @@ Optional (after running `plot_posterior_nc.py`):
 
 - `SR_flux_posterior.png`
 - `SR_flux_posterior_sigma_obs.png`
+- `params_prior_posterior_1d.png`
+- `params_prior_posterior_plot_offset_raw.png`
+- `params_prior_posterior_hour_effect_raw.png`
+- `params_prior_posterior_sigma_obs.png`
 
 ## Posterior visualization
 
@@ -141,6 +145,26 @@ This script:
   - `results/${site}/${year}/SR_flux_posterior_sigma_obs.png` — per plot, pooled mean flux with an approximate band using posterior mean `sigma_obs` on the **log-flux** scale: `exp(mean_eta ± mean_sigma_obs)` (see figure title; not a full posterior predictive interval).
 
 `plot_offset` and `hour_effect` in the model are **additive on the log scale**; they are not comparable to `exp(mu_t)` unless combined before exponentiating—this plotting pipeline does that combination per posterior draw.
+
+## Parameter prior/posterior visualization
+
+After a fit exists under `results/${site}/${year}/`, you can compare analytical priors (from `main/state_space_model.py`) against posterior samples:
+
+```bash
+python plot_posterior_params.py --site JERC --year 2020
+```
+
+This script:
+
+- Reads posterior samples from `results/${site}/${year}/${site}_${year}_posterior.nc` (`group="posterior"`).
+- Computes `beta0` prior mean from site-year observed log flux (`nanmean(y)`), matching model setup.
+- Overlays prior PDF (black line) and posterior density histograms for each chain.
+- Writes:
+  - `results/${site}/${year}/params_prior_posterior_1d.png` with one row per scalar parameter:
+    - `beta0`, `beta_sin_1`, `beta_cos_1`, `beta_sin_2`, `beta_cos_2`, `rho`, `sigma_proc`, `sigma_plot`, `sigma_hour`
+  - `results/${site}/${year}/params_prior_posterior_plot_offset_raw.png` (one subplot per `plot`)
+  - `results/${site}/${year}/params_prior_posterior_hour_effect_raw.png` (one subplot per `hour_of_day`)
+  - `results/${site}/${year}/params_prior_posterior_sigma_obs.png` (one subplot per `plot`)
 
 ## Environment Setup
 
