@@ -1,7 +1,8 @@
 """
 Plot posterior summaries for NEON soil CO2 flux state-space model (flux scale).
 
-Uses streaming accumulation over draws (see main.posterior_flux) to avoid large tensors.
+Posterior means over draws use vectorized NumPy in ``main.posterior_flux`` (all draws per chain).
+Open the NetCDF without splitting ``draw`` into tiny chunks so reads align with that access pattern.
 """
 
 from __future__ import annotations
@@ -44,7 +45,9 @@ if __name__ == "__main__":
     n_plot = int(data_all["plot_idx"].nunique())
     del neon_data, data_obs
 
-    ds = xr.open_dataset(posterior_file, group="posterior", chunks={"draw": 1})
+    # chunks=None: no Dask splitting along draw; avoids misaligned 1-draw chunks vs on-disk layout
+    # and matches accumulate_chain_mean_flux, which loads (draw, ...) slices per chain.
+    ds = xr.open_dataset(posterior_file, group="posterior", chunks=None)
     nt = ds.sizes["time"]
     time_array, hour_idx = time_hour_arrays_from_data(data_all, nt)
 
@@ -180,13 +183,13 @@ if __name__ == "__main__":
         sig = float(sigma_obs_mean[p])
         lower = np.exp(mean_eta_pooled[:, p] - sig)
         upper = np.exp(mean_eta_pooled[:, p] + sig)
-        axp.fill_between(time_array, lower, upper, color="0.85", label="exp(mean_eta ± sigma_obs) band")
+        axp.fill_between(time_array, lower, upper, color="0.85", label="sigma_obs")
         axp.plot(
             time_array,
             mean_flux_pooled[:, p],
             color=color_post,
             linewidth=1.5,
-            label="mean chain-mean flux (pooled)",
+            label="E(SR + plot + hour)",
         )
         axp.plot(
             time_array,
@@ -202,11 +205,11 @@ if __name__ == "__main__":
         axp.legend(loc="upper left", fontsize=8)
 
     axes2[-1].xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-    fig2.suptitle(
-        "sigma_obs is on log-flux scale; center = mean of per-chain E[exp(eta)]; band uses mean_eta ± sigma_obs",
-        fontsize=9,
-        y=1.002,
-    )
+    # fig2.suptitle(
+    #     "sigma_obs is on log-flux scale; center = mean of per-chain E[exp(eta)]; band uses mean_eta ± sigma_obs",
+    #     fontsize=9,
+    #     y=1.002,
+    # )
     fig2.tight_layout()
     sigma_path = f"./results/{args.site}/{args.year}/SR_flux_posterior_sigma_obs.png"
     fig2.savefig(sigma_path, dpi=300, bbox_inches="tight")
